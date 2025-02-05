@@ -16,6 +16,8 @@ class Controller
             'debug' => true,
             'auto_reload' => true
         ]);
+
+        $this->twig->addGlobal('session', $_SESSION);
     }
 
     public function render($view, $data = []) 
@@ -23,6 +25,14 @@ class Controller
         if ($this->twig === null) {
             throw new \Exception('Twig n\'est pas initialisé');
         }
-        echo $this->twig->render($view . '.twig', $data);
+        
+        $viewTemplate = strpos($view, '.twig') !== false ? $view : $view . '.twig';
+        
+        echo $this->twig->render($viewTemplate, $data);
+    }
+
+    public function view($view, $data = [])
+    {
+        $this->render($view, $data);
     }
 }

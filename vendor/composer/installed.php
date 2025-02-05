@@ -3,7 +3,7 @@
         'name' => 'youcode/mvc_moderne',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'f8b95c458b02957acb485c236e9d20306170fddc',
+        'reference' => '14556a3f3a57db6bd7fba15afe3a71c985134a71',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -94,7 +94,7 @@
         'youcode/mvc_moderne' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'f8b95c458b02957acb485c236e9d20306170fddc',
+            'reference' => '14556a3f3a57db6bd7fba15afe3a71c985134a71',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

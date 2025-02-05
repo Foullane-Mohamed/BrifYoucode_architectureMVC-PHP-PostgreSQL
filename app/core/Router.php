@@ -1,17 +1,21 @@
 <?php
-
 namespace App\core;
 
-use App\core\Controller;
+use App\Middleware\AuthMiddleware;
 
 class Router extends Controller
 {
-    protected $routes = [];
-
+    protected $routes = [
+        'GET' => [],
+        'POST' => []
+    ];
 
     private function addRoute($route, $controller, $action, $method)
     {
-        $this->routes[$method][$route] = ['controller' => $controller, 'action' => $action];  
+        $this->routes[$method][$route] = [
+            'controller' => $controller, 
+            'action' => $action
+        ];  
     }
 
     public function get($route, $controller, $action)
@@ -26,22 +30,37 @@ class Router extends Controller
 
     public function dispatch()
     {
-        $uri = strtok($_SERVER['REQUEST_URI'], '?');
-        $method =  $_SERVER['REQUEST_METHOD'];
-        // print_r($this->routes);
-        if (array_key_exists($uri, $this->routes[$method])) {
-            $controller = $this->routes[$method][$uri]['controller'];
-            $action = $this->routes[$method][$uri]['action'];
-            // var_dump($controller);
-            // echo"<br>";
-            // var_dump($action);
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $method = $_SERVER['REQUEST_METHOD'];
 
-            $controller = new $controller();
-            // var_dump($controller);
-            $controller->$action();
+        $matchedRoute = null;
+        foreach ($this->routes[$method] as $route => $routeInfo) {
+            $pattern = preg_replace('/\{([^}]+)\}/', '(?P<$1>[^/]+)', $route);
+            $pattern = str_replace('/', '\/', $pattern);
+            
+            if (preg_match("/^$pattern$/", $uri, $matches)) {
+                $matchedRoute = $routeInfo;
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                break;
+            }
+        }
+
+        if (!$matchedRoute && isset($this->routes[$method][$uri])) {
+            $matchedRoute = $this->routes[$method][$uri];
+            $params = [];
+        }
+
+        if ($matchedRoute) {
+            $controller = new $matchedRoute['controller']();
+            $action = $matchedRoute['action'];
+
+            if (empty($params)) {
+                $controller->$action();
+            } else {
+                call_user_func_array([$controller, $action], array_values($params));
+            }
         } else {
             $this->render('404');
-            
         }
     }
 }

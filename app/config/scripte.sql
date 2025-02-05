@@ -1,7 +1,14 @@
 -- Active: 1738589023032@@127.0.0.1@3306@blog_mvc
 CREATE DATABASE mvc_php_postgresql;
-
-
+use mvc_php_postgresql ;
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    salt VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE article (
     id SERIAL PRIMARY KEY,
