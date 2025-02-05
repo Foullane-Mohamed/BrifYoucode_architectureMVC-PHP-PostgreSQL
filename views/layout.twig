@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Blog{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg mb-8">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between">
+                <div class="flex space-x-7">
+                    <a href="/" class="flex items-center py-4 px-2">
+                        <span class="font-semibold text-gray-500 text-lg">Blog MVC</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-3">
+                    {% if session.user_id %}
+                        <a href="/articles/create" class="py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600">New Article</a>
+                        <span class="text-gray-500">{{ session.username }}</span>
+                        <a href="/logout" class="py-2 px-4 bg-red-500 text-white rounded hover:bg-red-600">Logout</a>
+                    {% else %}
+                        <a href="/login" class="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">Login</a>
+                        <a href="/register" class="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

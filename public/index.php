@@ -1,17 +1,11 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-require_once '../vendor/autoload.php';
+session_start();
 
-use App\Core\Router;
-use App\Controllers\UserController;
-use App\Controllers\ArticleController;
+require_once __DIR__ . '/../vendor/autoload.php';
 
-$router = new Router();
+$router = new App\Core\Router();
 
-$router->add('/register', [UserController::class, 'register']);
-$router->add('/login', [UserController::class, 'login']);
-$router->add('/articles', [ArticleController::class, 'index']);
-$router->add('/articles/create', [ArticleController::class, 'create']);
-
-$url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$router->dispatch($url);
+require_once __DIR__ . '/../routes/web.php';

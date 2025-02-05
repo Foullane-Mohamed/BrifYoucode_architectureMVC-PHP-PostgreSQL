@@ -5,32 +5,94 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Article;
 
-class ArticleController extends Controller {
-    public function index() {
-        $articleModel = new Article();
-        $articles = $articleModel->getAll();
-        $this->view('articles/index', ['articles' => $articles]);
+class ArticleController extends Controller
+{
+    private $article;
+
+    public function __construct() {
+        parent::__construct();
+        $this->article = new Article();
     }
 
-    public function create() {
-        session_start();
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: /login');
-            exit();
+    public function index()
+    {
+        $articles = $this->article->getAll();
+        $this->render('articles/index', ['articles' => $articles]);
+    }
+
+    public function show($id)
+    {
+        $article = $this->article->getById($id);
+        if (!$article) {
+            $this->redirect('/articles');
+        }
+        $this->render('articles/show', ['article' => $article]);
+    }
+
+    public function create()
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+        }
+        $this->render('articles/create');
+    }
+
+    public function store()
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
         }
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $title = $_POST['title'];
-            $content = $_POST['content'];
+        $this->article->title = $_POST['title'];
+        $this->article->content = $_POST['content'];
+        $this->article->user_id = $_SESSION['user_id'];
 
-            $articleModel = new Article();
-            if ($articleModel->create($_SESSION['user_id'], $title, $content)) {
-                header('Location: /articles');
-            } else {
-                echo "Article creation failed";
-            }
-        } else {
-            $this->view('articles/create');
+        if ($this->article->create()) {
+            $this->redirect('/articles');
         }
+        $this->redirect('/articles/create');
+    }
+
+    public function edit($id)
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+        }
+
+        $article = $this->article->getById($id);
+        if (!$article || $article['user_id'] != $_SESSION['user_id']) {
+            $this->redirect('/articles');
+        }
+
+        $this->render('articles/edit', ['article' => $article]);
+    }
+
+    public function update($id)
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+        }
+
+        $this->article->id = $id;
+        $this->article->title = $_POST['title'];
+        $this->article->content = $_POST['content'];
+        $this->article->user_id = $_SESSION['user_id'];
+
+        if ($this->article->update()) {
+            $this->redirect('/articles');
+        }
+        $this->redirect('/articles/edit/' . $id);
+    }
+
+    public function delete($id)
+    {
+        if (!$this->isAuthenticated()) {
+            $this->redirect('/login');
+        }
+
+        if ($this->article->delete($id, $_SESSION['user_id'])) {
+            $this->redirect('/articles');
+        }
+        $this->redirect('/articles');
     }
 }
