@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -7,92 +6,159 @@ use App\Models\Article;
 
 class ArticleController extends Controller
 {
-    private $article;
+    private $articleModel;
 
-    public function __construct() {
-        parent::__construct();
-        $this->article = new Article();
+    public function __construct() 
+    {
+        parent::__construct(); // Important: appel du constructeur parent pour initialiser Twig
+        $this->articleModel = new Article();
     }
 
+    // Affiche la liste des articles
     public function index()
     {
-        $articles = $this->article->getAll();
-        $this->render('articles/index', ['articles' => $articles]);
+        $articles = $this->articleModel->getArticles();
+        $this->render('article/index', ['articles' => $articles]);
     }
 
+    // Affiche un article spécifique
     public function show($id)
     {
-        $article = $this->article->getById($id);
+        $article = $this->articleModel->getArticleById($id);
         if (!$article) {
-            $this->redirect('/articles');
+            // Redirection vers la page 404 si l'article n'existe pas
+            $this->render('404');
+            return;
         }
-        $this->render('articles/show', ['article' => $article]);
+        $this->render('article/show', ['article' => $article]);
     }
 
+    // Affiche le formulaire de création
     public function create()
     {
-        if (!$this->isAuthenticated()) {
-            $this->redirect('/login');
-        }
-        $this->render('articles/create');
+        $this->render('article/create');
     }
 
+    // Traite la soumission du formulaire de création
     public function store()
     {
-        if (!$this->isAuthenticated()) {
-            $this->redirect('/login');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Récupération et validation des données
+            $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_STRING);
+            $content = filter_input(INPUT_POST, 'content', FILTER_SANITIZE_STRING);
+
+            $errors = [];
+            if (empty($title)) {
+                $errors['title'] = 'Le titre est requis';
+            }
+            if (empty($content)) {
+                $errors['content'] = 'Le contenu est requis';
+            }
+
+            if (empty($errors)) {
+                // Création de l'article
+                $created = $this->articleModel->createArticle([
+                    'title' => $title,
+                    'content' => $content
+                ]);
+
+                if ($created) {
+                    header('Location: /article');
+                    exit;
+                } else {
+                    $errors['general'] = 'Une erreur est survenue lors de la création de l\'article';
+                }
+            }
+
+            // En cas d'erreur, réafficher le formulaire avec les erreurs
+            $this->render('article/create', [
+                'errors' => $errors,
+                'old' => ['title' => $title, 'content' => $content]
+            ]);
+            return;
         }
 
-        $this->article->title = $_POST['title'];
-        $this->article->content = $_POST['content'];
-        $this->article->user_id = $_SESSION['user_id'];
-
-        if ($this->article->create()) {
-            $this->redirect('/articles');
-        }
-        $this->redirect('/articles/create');
+        // Si ce n'est pas une requête POST, rediriger vers le formulaire
+        header('Location: /article/create');
+        exit;
     }
 
+    // Affiche le formulaire de modification
     public function edit($id)
     {
-        if (!$this->isAuthenticated()) {
-            $this->redirect('/login');
+        $article = $this->articleModel->getArticleById($id);
+        if (!$article) {
+            $this->render('404');
+            return;
         }
-
-        $article = $this->article->getById($id);
-        if (!$article || $article['user_id'] != $_SESSION['user_id']) {
-            $this->redirect('/articles');
-        }
-
-        $this->render('articles/edit', ['article' => $article]);
+        $this->render('article/edit', ['article' => $article]);
     }
 
+    // Traite la soumission du formulaire de modification
     public function update($id)
     {
-        if (!$this->isAuthenticated()) {
-            $this->redirect('/login');
+        $article = $this->articleModel->getArticleById($id);
+        if (!$article) {
+            $this->render('404');
+            return;
         }
 
-        $this->article->id = $id;
-        $this->article->title = $_POST['title'];
-        $this->article->content = $_POST['content'];
-        $this->article->user_id = $_SESSION['user_id'];
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = filter_input(INPUT_POST, 'title', FILTER_SANITIZE_STRING);
+            $content = filter_input(INPUT_POST, 'content', FILTER_SANITIZE_STRING);
 
-        if ($this->article->update()) {
-            $this->redirect('/articles');
+            $errors = [];
+            if (empty($title)) {
+                $errors['title'] = 'Le titre est requis';
+            }
+            if (empty($content)) {
+                $errors['content'] = 'Le contenu est requis';
+            }
+
+            if (empty($errors)) {
+                $updated = $this->articleModel->updateArticle($id, [
+                    'title' => $title,
+                    'content' => $content
+                ]);
+
+                if ($updated) {
+                    header('Location: /article');
+                    exit;
+                } else {
+                    $errors['general'] = 'Une erreur est survenue lors de la modification de l\'article';
+                }
+            }
+
+            $this->render('article/edit', [
+                'article' => $article,
+                'errors' => $errors
+            ]);
+            return;
         }
-        $this->redirect('/articles/edit/' . $id);
+
+        header('Location: /article/edit/' . $id);
+        exit;
     }
 
+    // Supprime un article
     public function delete($id)
     {
-        if (!$this->isAuthenticated()) {
-            $this->redirect('/login');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $article = $this->articleModel->getArticleById($id);
+            if (!$article) {
+                $this->render('404');
+                return;
+            }
+
+            $deleted = $this->articleModel->deleteArticle($id);
+            if ($deleted) {
+                header('Location: /article');
+                exit;
+            }
         }
 
-        if ($this->article->delete($id, $_SESSION['user_id'])) {
-            $this->redirect('/articles');
-        }
-        $this->redirect('/articles');
+        // Si ce n'est pas une requête POST ou si la suppression a échoué
+        header('Location: /article');
+        exit;
     }
 }
